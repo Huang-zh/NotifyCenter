@@ -19,7 +19,11 @@ public class TransactionEventPublisher implements Publisher{
 
     private Logger logger = LoggerFactory.getLog(TransactionEventPublisher.class.getName());
 
+    //事务事件处理核心管理者
     private TransactionEventManager transactionEventManager;
+
+    //事务事件执行状态确认者
+    private PollingManager pollingManager;
 
     //对未知状态的事务事件进行结果轮训的时间间隔（毫秒）
     private Long pollingMills = TimeUnit.SECONDS.toMillis(10l);
@@ -31,6 +35,7 @@ public class TransactionEventPublisher implements Publisher{
             throw new RuntimeException("事务事件发布者初始化失败，请确保使用TransactionEvent初始化！");
         }
         transactionEventManager = new TransactionEventManager();
+        pollingManager = new PollingManager();
     }
 
     @Override
@@ -101,8 +106,8 @@ public class TransactionEventPublisher implements Publisher{
                 } else if (state.equals(TransactionEvent.FiniteEventStateMachine.DROPPED)){
                     transactionEvent = drop(transactionEvent);
                 } else {
-                    // TODO: 2022/12/6 其余状态的需要在listener中提供check方法，由当前publisher异步轮询
-
+                    //本地事务暂未返回执行结果，创建轮询任务
+                    pollingManager.addPollingTask(transactionEvent);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -140,6 +145,7 @@ public class TransactionEventPublisher implements Publisher{
             return transactionEvent;
         }
 
+
         boolean hasTransactionEvent(String transactionId){
             return transactionEvents.containsKey(transactionId);
         }
@@ -170,6 +176,19 @@ public class TransactionEventPublisher implements Publisher{
 
         public PollingManager() {
             scheduledExecutorService = Executors.newScheduledThreadPool(4);
+        }
+
+        /**
+         * @description: 为执行本地事务中的事务事件创建轮询任务
+         * @author: huangzh
+         * @date: 2022/12/15 19:57
+         * @param: [transactionEvent]
+         * @return: void
+         **/
+        void addPollingTask(TransactionEvent transactionEvent){
+            if (TransactionEvent.FiniteEventStateMachine.PREPARED.equals(transactionEvent.getState())){
+                
+            }
         }
 
         /**
