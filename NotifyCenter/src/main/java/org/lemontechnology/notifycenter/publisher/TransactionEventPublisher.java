@@ -44,8 +44,6 @@ public class TransactionEventPublisher implements Publisher{
         if (eventType().isInstance(event)){
             // 处理事务事件
             transactionEventManager.doTransaction((TransactionEvent) event);
-
-            // TODO: 2022/12/2 成功发布事件后，考虑最大努力通知方案，通知下游订阅者消费发布的事务事件
             success = true;
         } else {
             logger.error("事务事件发布者不允许发布非事务事件！");
@@ -187,7 +185,9 @@ public class TransactionEventPublisher implements Publisher{
          **/
         void addPollingTask(TransactionEvent transactionEvent){
             if (TransactionEvent.FiniteEventStateMachine.PREPARED.equals(transactionEvent.getState())){
-                
+                //创建定时任务
+                PullingTask task = new PullingTask(transactionEvent);
+                scheduledExecutorService.schedule(task,pullingMills,TimeUnit.MILLISECONDS);
             }
         }
 
