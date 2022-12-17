@@ -336,8 +336,6 @@ public class NotifyCenter {
                 try {
                     Event event = eventQueue.take();
                     notifySubscribers(event);
-                    // TODO: 2022/11/26 订阅者消费事件的结果记录，便于后续扩展事务事件。。。
-
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
