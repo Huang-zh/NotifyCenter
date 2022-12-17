@@ -17,7 +17,7 @@ import java.util.Map;
  **/
 class JsonConfigurationParser implements ConfigurationParser {
 
-    private static final String suffix = ".json";
+    private static final String SUFFIX = ".json";
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -26,7 +26,7 @@ class JsonConfigurationParser implements ConfigurationParser {
 
     @Override
     public Map<String, String> doParseConfigurationFile(File file)  throws Exception{
-        this.logger.info("将使用"+suffix+"尾缀的配置文件启动推送中心组件！");
+        this.logger.info("将使用"+SUFFIX+"尾缀的配置文件启动推送中心组件！");
         InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(file));
         BufferedReader reader = new BufferedReader(inputStreamReader);
         String line;
@@ -51,7 +51,7 @@ class JsonConfigurationParser implements ConfigurationParser {
 
     @Override
     public String getSuffix() {
-        return suffix;
+        return SUFFIX;
     }
 }
 

@@ -1,6 +1,7 @@
 package org.lemontechnology.notifycenter.publisher;
 
 
+import org.lemontechnology.notifycenter.NotifyCenter;
 import org.lemontechnology.notifycenter.event.Event;
 import org.lemontechnology.notifycenter.event.TransactionEvent;
 import org.lemontechnology.notifycenter.listener.TransactionEventListener;
@@ -71,7 +72,6 @@ public class TransactionEventPublisher implements Publisher{
 
         private final Long pullingMills = 3000L;
 
-        private final Integer pullingMaxTimes = 15;
 
         public TransactionEventManager() {
             transactionEvents = new ConcurrentHashMap<>();
@@ -220,10 +220,24 @@ public class TransactionEventPublisher implements Publisher{
                     TransactionEventListener listener = transactionEvent.getListener();
                     TransactionEvent.FiniteEventStateMachine state = listener.checkLocalTransactionState(transactionEvent);
                     if (TransactionEvent.FiniteEventStateMachine.PREPARED.equals(state)){
+                        //本地事务暂未执行完成，继续保持轮询
                         if ((pullingTime += 1) <= pullingMaxTimes) {
                             scheduledExecutorService.schedule(this,pullingMills,TimeUnit.MILLISECONDS);
+                        } else {
+                            //超出最大轮询次数
+                            logger.warn("超出事务事件状态允许最大轮询次数，放弃重试！事务事件id："+transactionId+
+                                    "，当前重试次数："+pullingTime+"，允许最大轮询次数："+pullingMaxTimes);
+                            transactionEventManager.removeTransactionEvent(transactionId);
                         }
                     } else {
+                        if (TransactionEvent.FiniteEventStateMachine.PUBLISHED.equals(state)){
+                            //如果本地事务执行成功，通知订阅者消费事件
+                            logger.info("当前本地事务执行成功，通知订阅者消费事件！事务事件id："+transactionId);
+                            transactionEvent.setState(state);
+                            NotifyCenter.doPushTransactionEvent(transactionEvent);
+                        } else if (TransactionEvent.FiniteEventStateMachine.DROPPED.equals(state)){
+                            logger.info("当前本地事务执行失败，将丢弃该事件！事务事件id："+transactionId);
+                        }
                         //本地事务处理成功，无论提交还是回滚，都需要防止事件积压
                         transactionEventManager.removeTransactionEvent(transactionId);
                     }

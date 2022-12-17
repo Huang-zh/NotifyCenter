@@ -17,7 +17,7 @@ import java.util.Set;
  **/
 public class PropertiesConfigurationParser implements ConfigurationParser {
 
-    private static final String suffix = ".properties";
+    private static final String SUFFIX = ".properties";
 
     private YmlConfigurationParser ymlConfigurationParser = new YmlConfigurationParser();
 
@@ -25,7 +25,7 @@ public class PropertiesConfigurationParser implements ConfigurationParser {
 
     @Override
     public Map<String, String> doParseConfigurationFile(File file)  throws Exception{
-        this.logger.info("将使用"+suffix+"尾缀的配置文件启动推送中心组件！");
+        this.logger.info("将使用"+SUFFIX+"尾缀的配置文件启动推送中心组件！");
         FileInputStream inputStream = null;
         inputStream = new FileInputStream(file);
         Properties properties = new Properties();
@@ -48,6 +48,6 @@ public class PropertiesConfigurationParser implements ConfigurationParser {
 
     @Override
     public String getSuffix() {
-        return suffix;
+        return SUFFIX;
     }
 }

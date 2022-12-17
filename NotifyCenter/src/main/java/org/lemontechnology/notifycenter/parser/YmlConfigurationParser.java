@@ -19,7 +19,7 @@ import java.util.Map;
  **/
 class YmlConfigurationParser implements ConfigurationParser {
 
-    private static final String suffix = ".yml";
+    private static final String SUFFIX = ".yml";
 
     private JsonConfigurationParser jsonConfigurationParser = new JsonConfigurationParser();
 
@@ -27,7 +27,7 @@ class YmlConfigurationParser implements ConfigurationParser {
 
     @Override
     public Map<String, String> doParseConfigurationFile(File file)  throws Exception{
-        this.logger.info("将使用"+suffix+"尾缀的配置文件启动推送中心组件！");
+        this.logger.info("将使用"+SUFFIX+"尾缀的配置文件启动推送中心组件！");
         InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(file));
         BufferedReader reader = new BufferedReader(inputStreamReader);
         String line;
@@ -91,7 +91,7 @@ class YmlConfigurationParser implements ConfigurationParser {
 
     @Override
     public String getSuffix() {
-        return suffix;
+        return SUFFIX;
     }
 }
 

@@ -244,16 +244,6 @@ public class NotifyCenter {
         eventLoop.doPushTransactionEvent(transactionEvent);
     }
 
-    /**
-     * @Author huang.zh
-     * @Description 丢弃暂存到EventLoop的事务事件
-     * @Date 9:20 下午 2022/12/6
-     * @Param [transactionEvent]
-     * @return
-     **/
-    public static void doDropTransactionEvent(TransactionEvent transactionEvent){
-        eventLoop.doDropTransactionEvent(transactionEvent);
-    }
 
     /**
      * @Author huang.zh
@@ -281,7 +271,6 @@ public class NotifyCenter {
             if (eventLoop.needNotifySubscribers(event)){
                 success &= eventLoop.pushEvent(event);
             }
-//            success &= eventLoop.pushEvent(event);
         }
         return success;
     }
@@ -310,6 +299,7 @@ public class NotifyCenter {
         }
     }
 
+
     /**
      * @Author huang.zh
      * @Description 事件循环线程，负责从队列中取出推送的事件，交予订阅者处理
@@ -321,8 +311,6 @@ public class NotifyCenter {
 
         BlockingQueue<Event> eventQueue;
 
-        Map<String,TransactionEvent> transactionEventMap;
-
         ExecutorService worker;
 
         final Integer transactionEventMax;
@@ -331,8 +319,6 @@ public class NotifyCenter {
             transactionEventMax = notifyCenterProperties.getEventMax();
             //消息总线有界队列
             this.eventQueue = new ArrayBlockingQueue<>(notifyCenterProperties.getEventMax());
-            //处理事务事件，注意，这个map中只能存储PREPARE状态的事件，类似于mq中半事务的消息
-            this.transactionEventMap = new ConcurrentHashMap<>(transactionEventMax);
             //总线自带一个worker线程，用于异步通知未提供线程池的订阅者消费发布的事件，防止事件堆积
             worker = Executors.newSingleThreadExecutor(new ThreadFactory() {
                 @Override
@@ -379,19 +365,6 @@ public class NotifyCenter {
                 logger.error("不允许发布值为null的事件！");
                 return false;
             }
-//            if (TransactionEvent.class.isInstance(event)){
-//                if (transactionEventMap.size() == transactionEventMax){
-//                    logger.error("当前事务事件总数已超出允许发布最大值！");
-//                    return false;
-//                }
-//                TransactionEvent transactionEvent = (TransactionEvent) event;
-//                if (!TransactionEvent.FiniteEventStateMachine.PREPARED.equals(transactionEvent.getState())){
-//                    logger.error("不允许发布状态不为半提交（PREPARED）的事务消息！");
-//                    return false;
-//                }
-//                transactionEventMap.put(transactionEvent.getTransactionId(),transactionEvent);
-//                return true;
-//            }
             //使用offer，确保事件发布顺序
             return eventQueue.offer(event);
         }
@@ -404,29 +377,11 @@ public class NotifyCenter {
          * @return
          **/
         void doPushTransactionEvent(TransactionEvent transactionEvent){
-            String transactionId = transactionEvent.getTransactionId();
-            if (transactionEventMap.containsKey(transactionId) &&
-                    TransactionEvent.FiniteEventStateMachine.PUBLISHED.equals(transactionEvent.getState())){
-                TransactionEvent transactionEventToPush = transactionEventMap.remove(transactionId);
-                transactionEventToPush.setState(transactionEvent.getState());
-                eventQueue.offer(transactionEventToPush);
+            if (TransactionEvent.FiniteEventStateMachine.PUBLISHED.equals(transactionEvent.getState())){
+                eventQueue.offer(transactionEvent);
             }
         }
 
-        /**
-         * @Author huang.zh
-         * @Description 丢弃半事务事件
-         * @Date 9:15 下午 2022/12/6
-         * @Param [transactionEvent]
-         * @return
-         **/
-        void doDropTransactionEvent(TransactionEvent transactionEvent){
-            String transactionId = transactionEvent.getTransactionId();
-            if (transactionEventMap.containsKey(transactionId) &&
-                    TransactionEvent.FiniteEventStateMachine.DROPPED.equals(transactionEvent.getState())){
-                transactionEventMap.remove(transactionId);
-            }
-        }
 
         /**
          * @Author huang.zh
@@ -437,7 +392,7 @@ public class NotifyCenter {
          **/
         void notifySubscribers(Event event) {
             Class<? extends Event> eventType = event.getClass();
-            if (eventType.getName().contains("$")){
+            if (!subscriberMap.containsKey(eventType) && eventType.getName().contains("$")){
                 eventType = (Class<? extends Event>) eventType.getSuperclass();
             }
             if (subscriberMap.containsKey(eventType)){
@@ -459,9 +414,7 @@ public class NotifyCenter {
                     notifyNode = notifyNode.next;
                 } while (notifyNode != null);
             } else {
-                if (!TransactionEvent.class.isInstance(event) && logger.isDebugEnabled()){
-                    logger.warn("当前暂无事件"+eventType.getSimpleName()+"的订阅者注册到NotifyCenter。");
-                }
+                logger.warn("当前暂无事件"+eventType.getSimpleName()+"的订阅者注册到NotifyCenter。");
             }
         }
     }
