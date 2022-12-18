@@ -9,15 +9,15 @@ package org.lemontechnology.notifycenter.properties;
 public class NotifyCenterProperties {
 
     //允许最大的推送者数量
-    private static Integer publisherMax = 1 << 8;
+    private Integer publisherMax = 1 << 8;
     //允许最大的同时投递事件数
-    private static Integer eventMax = 1 << 8;
+    private Integer eventMax = 1 << 8;
     //事件发布失败时的重试次数
-    private static Integer retryTime = 0;
+    private Integer retryTime = 0;
     //允许最大的发布失败重试事件数
-    private static Integer retryEventMax = 1 << 8;
+    private Integer retryEventMax = 1 << 8;
     //重试发布间隔时间，默认十秒
-    private static Integer retrySeconds = 10;
+    private Integer retrySeconds = 10;
 
     public NotifyCenterProperties() {
     }
@@ -29,7 +29,7 @@ public class NotifyCenterProperties {
         this.retryEventMax = retryEventMax;
     }
 
-    public static Integer getPublisherMax() {
+    public Integer getPublisherMax() {
         return publisherMax;
     }
 
@@ -37,7 +37,7 @@ public class NotifyCenterProperties {
         this.publisherMax = publisherMax;
     }
 
-    public static Integer getEventMax() {
+    public Integer getEventMax() {
         return eventMax;
     }
 
@@ -45,7 +45,7 @@ public class NotifyCenterProperties {
         this.eventMax = eventMax;
     }
 
-    public static Integer getRetryTime(){
+    public Integer getRetryTime(){
         return retryTime;
     }
 
@@ -53,7 +53,7 @@ public class NotifyCenterProperties {
         this.retryTime = retryTime;
     }
 
-    public static Integer getRetryEventMax() {
+    public Integer getRetryEventMax() {
         return retryEventMax;
     }
 
@@ -61,7 +61,7 @@ public class NotifyCenterProperties {
         this.retryEventMax = retryEventMax;
     }
 
-    public static Integer getRetrySeconds() {
+    public Integer getRetrySeconds() {
         return retrySeconds;
     }
 
@@ -69,5 +69,15 @@ public class NotifyCenterProperties {
         this.retrySeconds = retrySeconds;
     }
 
+    @Override
+    public String toString() {
+        return "NotifyCenterProperties{" +
+                "publisherMax=" + publisherMax +
+                ", eventMax=" + eventMax +
+                ", retryTime=" + retryTime +
+                ", retryEventMax=" + retryEventMax +
+                ", retrySeconds=" + retrySeconds +
+                '}';
+    }
 }
 

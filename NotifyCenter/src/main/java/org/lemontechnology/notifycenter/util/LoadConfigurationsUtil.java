@@ -40,6 +40,7 @@ public class LoadConfigurationsUtil {
         try{
             List<File> fileList = getClassRootPathFiles();
             notifyCenterProperties = parser.obtainNotifyCenterProperties(fileList);
+            logger.info("成功解析配置项："+notifyCenterProperties.toString());
         } catch (Exception e){
             logger.error("尝试获取NotifyCenter配置文件失败，将使用默认配置！");
             e.printStackTrace();
