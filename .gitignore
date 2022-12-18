@@ -27,3 +27,5 @@ target
 .idea
 out
 *.iml
+*.bin
+.DS_Store
