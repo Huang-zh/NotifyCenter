@@ -1,6 +1,7 @@
 package org.lemontechnology.notifycenter;
 
 
+import com.esotericsoftware.kryo.Kryo;
 import org.lemontechnology.notifycenter.event.CommonEvent;
 import org.lemontechnology.notifycenter.event.Event;
 import org.lemontechnology.notifycenter.event.RetryEvent;
@@ -36,6 +37,9 @@ public class NotifyCenter {
 
     //发布事件重试
     private static EventRetryLoop eventRetryLoop;
+
+    //消亡事件总线
+    private static DeadEventLoop deadEventLoop;
 
     private static Logger logger = LoggerFactory.getLog(NotifyCenter.class.getName());
 
@@ -153,6 +157,9 @@ public class NotifyCenter {
         //初始化事件发布失败总线，用于重试发布失败的事件
         eventRetryLoop = new EventRetryLoop(notifyCenterProperties);
         eventRetryLoop.start();
+
+        //初始化消亡事件总线
+        deadEventLoop = new DeadEventLoop();
     }
 
     public static Publisher findPublisher(Class<Event> clazz){
@@ -506,6 +513,50 @@ public class NotifyCenter {
         @Override
         public Boolean call() throws Exception {
             return subscriber.onEvent(event);
+        }
+    }
+
+    /**
+     * @description: 消亡事件总线，负责对消亡的事件进行持久化
+     * @author: huangzh
+     * @date: 2022/12/19 21:08
+     **/
+    private class DeadEventLoop {
+        //定时任务线程池，负责定时记录达到消亡要求的事件
+        private ScheduledExecutorService deadEventWorker;
+        //本地缓存，暂存待持久化的消亡事件
+        private List<Event> deadEvents;
+        //用于持久化
+        Kryo kryo = new Kryo();
+
+        public DeadEventLoop() {
+            //单线程记录
+            deadEventWorker = Executors.newSingleThreadScheduledExecutor();
+            deadEvents = new CopyOnWriteArrayList<>();
+            //初始化后，首次将于10秒后启动检查任务，往后间隔30秒检查一次是否有消亡事件需要持久化
+            deadEventWorker.scheduleWithFixedDelay(new CheckDeadEventTask(),10L,30L,TimeUnit.SECONDS);
+        }
+
+        /**
+         * @description: 消亡事件持久化检查任务
+         * @author: huangzh
+         * @date: 2022/12/19 21:27
+         **/
+        private class CheckDeadEventTask implements Runnable{
+            @Override
+            public void run() {
+                logger.info("开始执行消亡事件持久化检查任务");
+                if (deadEvents.isEmpty()){
+                    logger.info("暂无需要持久化的消亡事件");
+                    return;
+                } else {
+                    deadEvents.forEach(event -> {
+                        // TODO: 2022/12/19 添加持久化过程，考虑文件分割规则
+                        deadEvents.remove(event);
+                    });
+                    logger.info("结束执行消亡事件持久化检查任务");
+                }
+            }
         }
     }
 

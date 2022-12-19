@@ -1,9 +1,9 @@
 package org.lemontechnology.notifycenter.event;
 
 /**
- * @description: 存在一下两种状态的事件会被转化成消亡事件：
- *                  1.超过重试次数之后的普通事件
- *                  2.执行本地事务异常（超出本地事务确认次数）的事务事件
+ * @description: 存在以下两种状态的事务事件会被转化成消亡事件：
+ *                  1.执行本地事务异常（要求回滚，返回DROPPED状态）的事务事件，
+ *                  2.执行本地事务时间超长，即超出本地事务状态确认次数的事务事件
  *               一旦被转化为消亡事件，就会被记录在二进制文件
  * @author: huang.zh
  * @create: 2022-12-18 14:44
@@ -18,12 +18,15 @@ public class DeadEvent implements Event{
     private long timestamp;
     //消费标记
     private boolean consumeFlag;
+    //事务事件的状态
+    private TransactionEvent.FiniteEventStateMachine eventState;
 
-    public DeadEvent(Object data, EventType eventType, long timestamp, boolean consumeFlag) {
+    public DeadEvent(Object data, EventType eventType, long timestamp, boolean consumeFlag, TransactionEvent.FiniteEventStateMachine eventState) {
         this.data = data;
         this.eventType = eventType;
         this.timestamp = timestamp;
         this.consumeFlag = consumeFlag;
+        this.eventState = eventState;
     }
 
     @Override
@@ -58,6 +61,14 @@ public class DeadEvent implements Event{
 
     public void setConsumeFlag(boolean consumeFlag) {
         this.consumeFlag = consumeFlag;
+    }
+
+    public TransactionEvent.FiniteEventStateMachine getEventState() {
+        return eventState;
+    }
+
+    public void setEventState(TransactionEvent.FiniteEventStateMachine eventState) {
+        this.eventState = eventState;
     }
 
     enum EventType{
