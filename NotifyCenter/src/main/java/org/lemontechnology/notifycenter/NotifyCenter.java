@@ -2,15 +2,14 @@ package org.lemontechnology.notifycenter;
 
 
 import com.esotericsoftware.kryo.Kryo;
-import org.lemontechnology.notifycenter.event.CommonEvent;
-import org.lemontechnology.notifycenter.event.Event;
-import org.lemontechnology.notifycenter.event.RetryEvent;
-import org.lemontechnology.notifycenter.event.TransactionEvent;
+import org.lemontechnology.notifycenter.event.*;
 import org.lemontechnology.notifycenter.function.BuildFunction;
 import org.lemontechnology.notifycenter.logging.Logger;
 import org.lemontechnology.notifycenter.logging.LoggerFactory;
 import org.lemontechnology.notifycenter.properties.NotifyCenterProperties;
 import org.lemontechnology.notifycenter.publisher.Publisher;
+import org.lemontechnology.notifycenter.strategy.DefaultPersistenceStrategy;
+import org.lemontechnology.notifycenter.strategy.PersistenceStrategy;
 import org.lemontechnology.notifycenter.subscriber.Subscriber;
 import org.lemontechnology.notifycenter.util.LoadConfigurationsUtil;
 
@@ -525,9 +524,9 @@ public class NotifyCenter {
         //定时任务线程池，负责定时记录达到消亡要求的事件
         private ScheduledExecutorService deadEventWorker;
         //本地缓存，暂存待持久化的消亡事件
-        private List<Event> deadEvents;
-        //用于持久化
-        Kryo kryo = new Kryo();
+        private List<DeadEvent> deadEvents;
+        //持久化策略
+        private PersistenceStrategy persistenceStrategy;
 
         public DeadEventLoop() {
             //单线程记录
@@ -535,6 +534,7 @@ public class NotifyCenter {
             deadEvents = new CopyOnWriteArrayList<>();
             //初始化后，首次将于10秒后启动检查任务，往后间隔30秒检查一次是否有消亡事件需要持久化
             deadEventWorker.scheduleWithFixedDelay(new CheckDeadEventTask(),10L,30L,TimeUnit.SECONDS);
+            persistenceStrategy = new DefaultPersistenceStrategy();
         }
 
         /**
@@ -551,7 +551,7 @@ public class NotifyCenter {
                     return;
                 } else {
                     deadEvents.forEach(event -> {
-                        // TODO: 2022/12/19 添加持久化过程，考虑文件分割规则
+                        persistenceStrategy.doPersistence(event);
                         deadEvents.remove(event);
                     });
                     logger.info("结束执行消亡事件持久化检查任务");
