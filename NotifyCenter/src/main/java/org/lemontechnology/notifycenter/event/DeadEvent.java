@@ -21,6 +21,9 @@ public class DeadEvent implements Event{
     //事务事件的状态
     private TransactionEvent.FiniteEventStateMachine eventState;
 
+    public DeadEvent() {
+    }
+
     public DeadEvent(Object data, EventType eventType, long timestamp, boolean consumeFlag, TransactionEvent.FiniteEventStateMachine eventState) {
         this.data = data;
         this.eventType = eventType;
@@ -37,6 +40,14 @@ public class DeadEvent implements Event{
     @Override
     public Object data() {
         return data;
+    }
+
+    public Object getData() {
+        return data;
+    }
+
+    public void setData(Object data) {
+        this.data = data;
     }
 
     public EventType getEventType() {
@@ -71,7 +82,7 @@ public class DeadEvent implements Event{
         this.eventState = eventState;
     }
 
-    enum EventType{
+    public enum EventType{
         NORMAL,
         TRANSACTION;
     }

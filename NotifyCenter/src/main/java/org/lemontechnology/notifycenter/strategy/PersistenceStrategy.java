@@ -2,6 +2,8 @@ package org.lemontechnology.notifycenter.strategy;
 
 import org.lemontechnology.notifycenter.event.DeadEvent;
 
+import java.util.Collection;
+
 /**
  * @Author huang.zh
  * @Description 消亡事件持久化策略顶层接口抽象
@@ -9,5 +11,5 @@ import org.lemontechnology.notifycenter.event.DeadEvent;
  **/
 public interface PersistenceStrategy {
 
-    void doPersistence(DeadEvent event);
+    void doPersistence(Collection<DeadEvent> event);
 }

@@ -550,10 +550,9 @@ public class NotifyCenter {
                     logger.info("暂无需要持久化的消亡事件");
                     return;
                 } else {
-                    deadEvents.forEach(event -> {
-                        persistenceStrategy.doPersistence(event);
-                        deadEvents.remove(event);
-                    });
+                    ArrayList<DeadEvent> eventsToPersistence = new ArrayList<>(DeadEventLoop.this.deadEvents);
+                    persistenceStrategy.doPersistence(eventsToPersistence);
+                    DeadEventLoop.this.deadEvents.removeAll(eventsToPersistence);
                     logger.info("结束执行消亡事件持久化检查任务");
                 }
             }
