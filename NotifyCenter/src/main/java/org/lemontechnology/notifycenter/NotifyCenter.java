@@ -552,7 +552,7 @@ public class NotifyCenter {
                 } else {
                     ArrayList<DeadEvent> eventsToPersistence = new ArrayList<>(DeadEventLoop.this.deadEvents);
                     persistenceStrategy.doPersistence(eventsToPersistence);
-                    DeadEventLoop.this.deadEvents.removeAll(eventsToPersistence);
+                    deadEvents.removeAll(eventsToPersistence);
                     logger.info("结束执行消亡事件持久化检查任务");
                 }
             }

@@ -1,5 +1,6 @@
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.KryoBufferUnderflowException;
 import org.junit.Test;
 import org.lemontechnology.notifycenter.event.DeadEvent;
 import org.lemontechnology.notifycenter.event.TransactionEvent;
@@ -19,13 +20,20 @@ public class DefaultPersistenceStrategyTest {
 
     @Test
     public void test(){
-//        DefaultPersistenceStrategy strategy = new DefaultPersistenceStrategy();
-//        List<DeadEvent> list = new ArrayList<>(2048);
-//        for (int i = 1; i <= 2048; i++) {
-//            list.add(new DeadEvent("testData"+i, DeadEvent.EventType.TRANSACTION,
-//                    System.currentTimeMillis(),false, TransactionEvent.FiniteEventStateMachine.PREPARED));
-//        }
-//        strategy.doPersistence(list);
+        persistence();
+    }
+
+    private void persistence(){
+        DefaultPersistenceStrategy strategy = new DefaultPersistenceStrategy();
+        List<DeadEvent> list = new ArrayList<>(2048);
+        for (int i = 1; i <= 2048; i++) {
+            list.add(new DeadEvent("testData"+i, DeadEvent.EventType.TRANSACTION,
+                    System.currentTimeMillis(),false, TransactionEvent.FiniteEventStateMachine.PREPARED));
+        }
+        strategy.doPersistence(list);
+    }
+
+    private void readFromDisk(){
         Kryo kryo = new Kryo();
         kryo.register(DeadEvent.class);
         kryo.register(DeadEvent.EventType.class);
@@ -33,14 +41,16 @@ public class DefaultPersistenceStrategyTest {
         try {
             Input input = new Input(new FileInputStream("NotifyCenter.bin"));
             DeadEvent event = kryo.readObject(input,  DeadEvent.class) ;
-            System.out.println(kryo.getNextRegistrationId());
             while (event!=null){
-                System.out.println(event.data()+" "+kryo.isFinal(DeadEvent.class) + " "+kryo.isClosure(DeadEvent.class));
+                System.out.println(event.getEventType()+" "+kryo.isFinal(DeadEvent.class) + " "+kryo.isClosure(DeadEvent.class));
                 event = kryo.readObject(input,  DeadEvent.class);
+                System.out.println(event);
             }
 
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
+        } catch (KryoBufferUnderflowException e){
+            //ignore
         }
     }
 }

@@ -31,6 +31,9 @@ public class DefaultPersistenceStrategy implements PersistenceStrategy{
     //文件分割尾缀
     private static int partition = 0;
 
+    //二进制文件扩展名
+    private static final String SUFFIX = ".bin";
+
     private static Logger logger = LoggerFactory.getLog(DefaultPersistenceStrategy.class.getName());
 
     static {
@@ -57,9 +60,7 @@ public class DefaultPersistenceStrategy implements PersistenceStrategy{
             for (DeadEvent event : events) {
                 kryo.writeObject(output, event);
                 //检查是否需要分割当前二进制文件
-                if (splitFile(filePath)){
-                    output.flush();
-                    output.close();
+                if (splitFile(file,output)){
                     output = new Output(new FileOutputStream(filePath));
                 }
             }
@@ -96,17 +97,18 @@ public class DefaultPersistenceStrategy implements PersistenceStrategy{
      * @Param [filePath]
      * @return
      **/
-    private boolean splitFile(String filePath){
-        File file = new File(filePath);
+    private boolean splitFile(File file,Output output){
         boolean renamed = false;
         if (file.exists() && file.isFile()){
             long size = file.length() / 1024;
             if (renamed = (size > fileSize)){
+                output.flush();
+                output.close();
                 String fileName = file.getName();
-                String path = fileName.replaceAll(".bin", StringUtils.EMPTY) + "-" + (++partition) + ".bin";
+                String path = fileName.replaceAll(SUFFIX, StringUtils.EMPTY) + "-" + (++partition) + SUFFIX;
                 file.renameTo(checkFile(path));
                 //创建新的文件，即NotifyCenter.bin
-                checkFile(filePath);
+                checkFile(FILE_PATH+FILE_NAME);
             }
         }
         return renamed;
